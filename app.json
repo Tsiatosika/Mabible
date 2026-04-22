@@ -14,17 +14,18 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.votrenom.mabible"
+      "bundleIdentifier": "com.mabible.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#6B2D0E"
       },
-      "package": "com.votrenom.mabible"
+      "package": "com.mabible.app"
     },
-    "plugins": [
-      "expo-router"
-    ]
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": false
+    }
   }
 }
