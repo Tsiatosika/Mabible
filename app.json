@@ -1,29 +1,30 @@
 {
   "expo": {
-    "name": "MaBible",
-    "slug": "MaBible",
+    "name": "Ma Bible",
+    "slug": "ma-bible",
     "version": "1.0.0",
+    "scheme": "mabible",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#6B2D0E"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.votrenom.mabible"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#6B2D0E"
       },
-      "edgeToEdgeEnabled": true
+      "package": "com.votrenom.mabible"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
