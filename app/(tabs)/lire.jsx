@@ -50,7 +50,7 @@ export default function LireScreen() {
               <TouchableOpacity
                 key={livre.abrev}
                 style={styles.livreRow}
-                onPress={() => router.push(`/lecture/${livre.abrev}/1`)}
+                onPress={() => router.push(`/lecture/${livre.abrev}`)}
               >
                 <View style={styles.livreAvatar}>
                   <Text style={styles.livreAvatarText}>{livre.abrev.slice(0, 2)}</Text>
