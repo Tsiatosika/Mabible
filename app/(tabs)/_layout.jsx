@@ -6,7 +6,7 @@ import { useTheme } from '../../context/ThemeContext';
 function TabIcon({ emoji, label, focused, colors }) {
   return (
     <View style={styles.tabItem}>
-      <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.4 }}>{emoji}</Text>
+      <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.4 }}>{emoji}</Text>
       <Text style={[styles.label, { color: focused ? colors.tabActive : colors.tabInactive }]}>
         {label}
       </Text>
@@ -62,11 +62,19 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="plan"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji="📅" label="Plan" focused={focused} colors={colors} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  tabItem:  { alignItems: 'center' },
-  label:    { fontSize: 10, marginTop: 2, fontWeight: '600' },
+  tabItem: { alignItems: 'center' },
+  label:   { fontSize: 10, marginTop: 2, fontWeight: '600' },
 });
