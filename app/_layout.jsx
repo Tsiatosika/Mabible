@@ -1,4 +1,3 @@
-// app/_layout.jsx
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -17,8 +16,18 @@ export default function RootLayout() {
       <StatusBar style="light" backgroundColor="#6B2D0E" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="lecture/[book]/index" />
-        <Stack.Screen name="lecture/[book]/[chapter]" />
+        <Stack.Screen
+          name="lecture/[book]/index"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="lecture/[book]/[chapter]"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="parametres"
+          options={{ headerShown: false }}
+        />
       </Stack>
     </ThemeProvider>
   );

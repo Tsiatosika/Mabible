@@ -1,8 +1,9 @@
-// app/lecture/[book]/index.jsx
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BIBLE_STRUCTURE } from '../../../constants/bibleStructure';
 import { useTheme } from '../../../context/ThemeContext';
+import BottomTabBar from '../../../components/BottomTabBar';
+
 
 const ALL_BOOKS_FLAT = [
   ...BIBLE_STRUCTURE.ancienTestament.categories.flatMap(c => c.livres),
@@ -28,6 +29,7 @@ export default function ChapitresScreen() {
             <Text style={styles.backBtnText}>← Retour</Text>
           </TouchableOpacity>
         </View>
+        <BottomTabBar />
       </SafeAreaView>
     );
   }

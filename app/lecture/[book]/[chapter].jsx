@@ -1,4 +1,3 @@
-// app/lecture/[book]/[chapter].jsx
 import { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
@@ -10,6 +9,7 @@ import { useBookmarks } from '../../../hooks/useBookmarks';
 import { saveLastPosition, addToHistory } from '../../../utils/storage';
 import { BIBLE_STRUCTURE } from '../../../constants/bibleStructure';
 import { useTheme } from '../../../context/ThemeContext';
+import BottomTabBar from '../../../components/BottomTabBar';
 
 const ALL_BOOKS_FLAT = [
   ...BIBLE_STRUCTURE.ancienTestament.categories.flatMap(c => c.livres),
@@ -74,7 +74,6 @@ export default function LectureScreen() {
     }
   }
 
-  // ── Chargement ─────────────────────────────────────────────────────────────
   if (loading || !bible) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -87,7 +86,6 @@ export default function LectureScreen() {
     );
   }
 
-  // ── Chapitre introuvable ────────────────────────────────────────────────────
   if (!chapData) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -119,7 +117,6 @@ export default function LectureScreen() {
     );
   }
 
-  // ── Écran principal ─────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
 
@@ -322,7 +319,7 @@ export default function LectureScreen() {
           </View>
         </Pressable>
       </Modal>
-
+      <BottomTabBar />
     </SafeAreaView>
   );
 }
@@ -353,7 +350,7 @@ const styles = StyleSheet.create({
   chapCurrent:       { fontSize: 13, fontWeight: '600' },
 
   // Contenu
-  scroll:            { padding: 16, paddingBottom: 100 },
+  scroll: { padding: 16, paddingBottom: 160 },
 
   // Astuce
   tipBox:            { borderRadius: 8, padding: 10, marginBottom: 14,
@@ -377,7 +374,7 @@ const styles = StyleSheet.create({
   bottomBtnText:     { color: '#fff', fontWeight: '600', fontSize: 14 },
 
   // FAB
-  fab:               { position: 'absolute', bottom: 24, right: 20, width: 52, height: 52,
+  fab:               { position: 'absolute', bottom: 90, right: 20, width: 52, height: 52,
                        borderRadius: 26, justifyContent: 'center', alignItems: 'center',
                        shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8,
                        elevation: 6 },
