@@ -1,10 +1,10 @@
-// app/(tabs)/favoris.jsx
 import { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, SafeAreaView
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useBookmarks } from '../../hooks/useBookmarks';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -33,29 +33,38 @@ export default function FavorisScreen() {
       onPress={() => router.push(`/lecture/${item.bookAbrev}/${item.chapter}`)}
     >
       <View style={styles.cardHeader}>
-        <Text style={[styles.cardRef, { color: colors.accent }]}>
-          {item.book} {item.chapter}:{item.verse}
-        </Text>
+        <View style={styles.cardRefRow}>
+          <Ionicons name="bookmark" size={13} color={colors.accent} />
+          <Text style={[styles.cardRef, { color: colors.accent }]}>
+            {'  '}{item.book} {item.chapter}:{item.verse}
+          </Text>
+        </View>
         <TouchableOpacity
           onPress={() => toggle(item)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={styles.removeBtn}>🗑</Text>
+          <Ionicons name="trash-outline" size={18} color={colors.textLight} />
         </TouchableOpacity>
       </View>
       <Text style={[styles.cardText, { color: colors.textPrimary }]} numberOfLines={3}>
         « {item.text} »
       </Text>
-      <Text style={[styles.cardDate, { color: colors.textLight }]}>
-        {formatDate(item.addedAt)}
-      </Text>
+      <View style={styles.cardFooter}>
+        <Ionicons name="time-outline" size={11} color={colors.textLight} />
+        <Text style={[styles.cardDate, { color: colors.textLight }]}>
+          {'  '}{formatDate(item.addedAt)}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
+        <Ionicons name="bookmark" size={20} color="rgba(255,255,255,0.8)"
+          style={{ marginBottom: 4 }} />
         <Text style={styles.headerTitle}>Mes Favoris</Text>
         <Text style={styles.headerSub}>
           {bookmarks.length} verset{bookmarks.length > 1 ? 's' : ''} sauvegardé{bookmarks.length > 1 ? 's' : ''}
@@ -65,7 +74,10 @@ export default function FavorisScreen() {
       {/* Onglets */}
       <View style={[styles.tabs, { backgroundColor: colors.surface,
         borderBottomColor: colors.border }]}>
-        {[['tous','Tous'], ['recents','Récents']].map(([key, label]) => (
+        {[
+          ['tous',    'list-outline',   'list',    'Tous'],
+          ['recents', 'time-outline',   'time',    'Récents'],
+        ].map(([key, iconOff, iconOn, label]) => (
           <TouchableOpacity
             key={key}
             style={[styles.tab, onglet === key && {
@@ -73,6 +85,12 @@ export default function FavorisScreen() {
             }]}
             onPress={() => setOnglet(key)}
           >
+            <Ionicons
+              name={onglet === key ? iconOn : iconOff}
+              size={15}
+              color={onglet === key ? colors.primary : colors.textLight}
+              style={{ marginRight: 5 }}
+            />
             <Text style={[styles.tabText,
               { color: onglet === key ? colors.primary : colors.textLight }]}>
               {label}
@@ -89,7 +107,9 @@ export default function FavorisScreen() {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>🔖</Text>
+              <View style={[styles.emptyIconBox, { backgroundColor: colors.surfaceWarm }]}>
+                <Ionicons name="bookmark-outline" size={40} color={colors.textLight} />
+              </View>
               <Text style={[styles.emptyText, { color: colors.textLight }]}>
                 Aucun favori pour l'instant.{'\n'}
                 Appuyez sur un verset pendant la lecture pour l'ajouter.
@@ -106,20 +126,26 @@ const styles = StyleSheet.create({
   header:       { paddingTop: 16, paddingBottom: 20, alignItems: 'center' },
   headerTitle:  { color: '#fff', fontSize: 20, fontWeight: '700' },
   headerSub:    { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginTop: 4 },
+
   tabs:         { flexDirection: 'row', borderBottomWidth: 1 },
-  tab:          { flex: 1, paddingVertical: 14, alignItems: 'center' },
+  tab:          { flex: 1, paddingVertical: 14, alignItems: 'center',
+                  flexDirection: 'row', justifyContent: 'center' },
   tabText:      { fontSize: 14, fontWeight: '600' },
+
   list:         { padding: 16, paddingBottom: 32 },
   card:         { borderRadius: 12, padding: 16, marginBottom: 12,
                   borderLeftWidth: 4, shadowColor: '#000', shadowOpacity: 0.05,
                   shadowRadius: 6, elevation: 2 },
   cardHeader:   { flexDirection: 'row', justifyContent: 'space-between',
                   alignItems: 'center', marginBottom: 8 },
+  cardRefRow:   { flexDirection: 'row', alignItems: 'center' },
   cardRef:      { fontWeight: '700', fontSize: 15 },
-  removeBtn:    { fontSize: 16 },
   cardText:     { fontSize: 14, lineHeight: 22, fontStyle: 'italic' },
-  cardDate:     { fontSize: 11, marginTop: 8 },
-  empty:        { alignItems: 'center', marginTop: 80 },
-  emptyEmoji:   { fontSize: 52, marginBottom: 16 },
+  cardFooter:   { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  cardDate:     { fontSize: 11 },
+
+  empty:        { alignItems: 'center', marginTop: 80, paddingHorizontal: 32 },
+  emptyIconBox: { width: 80, height: 80, borderRadius: 24, justifyContent: 'center',
+                  alignItems: 'center', marginBottom: 16 },
   emptyText:    { fontSize: 15, textAlign: 'center', lineHeight: 24 },
 });

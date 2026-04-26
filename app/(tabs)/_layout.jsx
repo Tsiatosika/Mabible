@@ -1,15 +1,22 @@
 // app/(tabs)/_layout.jsx
 import { Tabs } from 'expo-router';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
-function TabIcon({ emoji, label, focused, colors }) {
+const TAB_ICONS = {
+  index:      { icon: 'home-outline',     iconActive: 'home'           },
+  lire:       { icon: 'book-outline',     iconActive: 'book'           },
+  rechercher: { icon: 'search-outline',   iconActive: 'search'         },
+  favoris:    { icon: 'bookmark-outline', iconActive: 'bookmark'       },
+  plan:       { icon: 'calendar-outline', iconActive: 'calendar'       },
+};
+
+function TabIcon({ name, focused, color, label }) {
   return (
     <View style={styles.tabItem}>
-      <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.4 }}>{emoji}</Text>
-      <Text style={[styles.label, { color: focused ? colors.tabActive : colors.tabInactive }]}>
-        {label}
-      </Text>
+      <Ionicons name={name} size={24} color={color} />
+      <Text style={[styles.label, { color }]}>{label}</Text>
     </View>
   );
 }
@@ -30,46 +37,28 @@ export default function TabsLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🏠" label="Accueil" focused={focused} colors={colors} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="lire"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="📖" label="Lire" focused={focused} colors={colors} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="rechercher"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🔍" label="Rechercher" focused={focused} colors={colors} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="favoris"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🔖" label="Favoris" focused={focused} colors={colors} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="plan"
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="📅" label="Plan" focused={focused} colors={colors} />
-          ),
-        }}
-      />
+      {[
+        { name: 'index',      label: 'Accueil'    },
+        { name: 'lire',       label: 'Lire'       },
+        { name: 'rechercher', label: 'Rechercher' },
+        { name: 'favoris',    label: 'Favoris'    },
+        { name: 'plan',       label: 'Plan'       },
+      ].map(({ name, label }) => (
+        <Tabs.Screen
+          key={name}
+          name={name}
+          options={{
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                name={focused ? TAB_ICONS[name].iconActive : TAB_ICONS[name].icon}
+                focused={focused}
+                color={focused ? colors.tabActive : colors.tabInactive}
+                label={label}
+              />
+            ),
+          }}
+        />
+      ))}
     </Tabs>
   );
 }

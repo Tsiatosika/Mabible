@@ -1,9 +1,11 @@
+// app/(tabs)/index.jsx
 import { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, SafeAreaView
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { getLastPosition, getBookmarks, getReadingHistory } from '../../utils/storage';
 import { DAILY_VERSES, BIBLE_STRUCTURE } from '../../constants/bibleStructure';
 import { useTheme } from '../../context/ThemeContext';
@@ -51,7 +53,7 @@ export default function AccueilScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
 
-      {/* ── Header avec ⚙️ en haut à droite ── */}
+      {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
         <View style={styles.headerLeft} />
         <View style={styles.headerCenter}>
@@ -62,7 +64,7 @@ export default function AccueilScreen() {
           style={styles.headerRight}
           onPress={() => router.push('/parametres')}
         >
-          <Text style={styles.settingsIcon}>⚙️</Text>
+          <Ionicons name="settings-outline" size={22} color="rgba(255,255,255,0.9)" />
         </TouchableOpacity>
       </View>
 
@@ -71,11 +73,17 @@ export default function AccueilScreen() {
         {/* Verset du jour */}
         {verseOfDay && (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.cardTitle, { color: colors.accent }]}>✨ Verset du jour</Text>
+            <View style={styles.cardTitleRow}>
+              <Ionicons name="sunny-outline" size={16} color={colors.accent} />
+              <Text style={[styles.cardTitle, { color: colors.accent }]}>Verset du jour</Text>
+            </View>
             <Text style={[styles.verseText, { color: colors.textPrimary }]}>
               « {verseOfDay.texte} »
             </Text>
-            <Text style={[styles.verseRef, { color: colors.accent }]}>{verseOfDay.ref}</Text>
+            <View style={styles.verseRefRow}>
+              <Ionicons name="bookmark-outline" size={13} color={colors.accent} />
+              <Text style={[styles.verseRef, { color: colors.accent }]}> {verseOfDay.ref}</Text>
+            </View>
           </View>
         )}
 
@@ -105,7 +113,7 @@ export default function AccueilScreen() {
                   Chapitre {lastPosition.chapter}
                 </Text>
               </View>
-              <Text style={[styles.arrow, { color: colors.textLight }]}>›</Text>
+              <Ionicons name="chevron-forward" size={22} color={colors.textLight} />
             </TouchableOpacity>
           </View>
         )}
@@ -118,6 +126,8 @@ export default function AccueilScreen() {
               style={[styles.testamentBtn, { backgroundColor: colors.primary }]}
               onPress={() => router.push('/lire')}
             >
+              <Ionicons name="library-outline" size={24} color="rgba(255,255,255,0.9)"
+                style={{ marginBottom: 6 }} />
               <Text style={styles.testamentLabel}>Ancien{'\n'}Testament</Text>
               <Text style={styles.testamentCount}>39 livres</Text>
             </TouchableOpacity>
@@ -125,6 +135,8 @@ export default function AccueilScreen() {
               style={[styles.testamentBtn, { backgroundColor: colors.primaryLight }]}
               onPress={() => router.push('/lire')}
             >
+              <Ionicons name="heart-outline" size={24} color="rgba(255,255,255,0.9)"
+                style={{ marginBottom: 6 }} />
               <Text style={styles.testamentLabel}>Nouveau{'\n'}Testament</Text>
               <Text style={styles.testamentCount}>27 livres</Text>
             </TouchableOpacity>
@@ -134,16 +146,19 @@ export default function AccueilScreen() {
         {/* Statistiques */}
         <View style={[styles.statsRow, { backgroundColor: colors.surface }]}>
           <View style={styles.statBox}>
+            <Ionicons name="bookmark" size={18} color={colors.primary} style={{ marginBottom: 4 }} />
             <Text style={[styles.statNum, { color: colors.primary }]}>{stats.favoris}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Favoris</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.divider }]} />
           <View style={styles.statBox}>
+            <Ionicons name="calendar" size={18} color={colors.primary} style={{ marginBottom: 4 }} />
             <Text style={[styles.statNum, { color: colors.primary }]}>{stats.jours}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Jours lus</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.divider }]} />
           <View style={styles.statBox}>
+            <Ionicons name="trending-up" size={18} color={colors.primary} style={{ marginBottom: 4 }} />
             <Text style={[styles.statNum, { color: colors.primary }]}>{stats.progression}%</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Progression</Text>
           </View>
@@ -209,7 +224,7 @@ function RecentBooks({ router, colors }) {
                 Chapitre {item.chapter}
               </Text>
             </View>
-            <Text style={[styles.arrow, { color: colors.textLight }]}>›</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
           </TouchableOpacity>
         );
       })}
@@ -218,54 +233,54 @@ function RecentBooks({ router, colors }) {
 }
 
 const styles = StyleSheet.create({
-  // Header
-  header:          { flexDirection: 'row', alignItems: 'center',
-                     paddingTop: 16, paddingBottom: 16, paddingHorizontal: 16 },
-  headerLeft:      { width: 44 },
-  headerCenter:    { flex: 1, alignItems: 'center' },
-  headerRight:     { width: 44, alignItems: 'flex-end', justifyContent: 'center' },
-  headerTitle:     { color: '#fff', fontSize: 22, fontWeight: '700', letterSpacing: 0.5 },
-  headerSub:       { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
-  settingsIcon:    { fontSize: 22 },
+  header:           { flexDirection: 'row', alignItems: 'center',
+                      paddingTop: 16, paddingBottom: 16, paddingHorizontal: 16 },
+  headerLeft:       { width: 44 },
+  headerCenter:     { flex: 1, alignItems: 'center' },
+  headerRight:      { width: 44, alignItems: 'flex-end', justifyContent: 'center' },
+  headerTitle:      { color: '#fff', fontSize: 22, fontWeight: '700', letterSpacing: 0.5 },
+  headerSub:        { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
 
-  scroll:          { padding: 16, paddingBottom: 40 },
-  card:            { borderRadius: 14, padding: 18, marginBottom: 20,
-                     shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
-  cardTitle:       { fontWeight: '700', fontSize: 15, marginBottom: 10 },
-  verseText:       { fontSize: 15, fontStyle: 'italic', lineHeight: 24 },
-  verseRef:        { fontWeight: '600', fontSize: 13, marginTop: 8 },
+  scroll:           { padding: 16, paddingBottom: 40 },
 
-  section:         { marginBottom: 20 },
-  sectionTitle:    { fontWeight: '700', fontSize: 16, marginBottom: 10 },
+  card:             { borderRadius: 14, padding: 18, marginBottom: 20,
+                      shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
+  cardTitleRow:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  cardTitle:        { fontWeight: '700', fontSize: 15 },
+  verseText:        { fontSize: 15, fontStyle: 'italic', lineHeight: 24 },
+  verseRefRow:      { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  verseRef:         { fontWeight: '600', fontSize: 13 },
 
-  continueCard:    { borderRadius: 12, padding: 14, flexDirection: 'row',
-                     alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05,
-                     shadowRadius: 6, elevation: 2 },
-  avatar:          { width: 44, height: 44, borderRadius: 22, justifyContent: 'center',
-                     alignItems: 'center', marginRight: 12 },
-  avatarText:      { color: '#fff', fontWeight: '700', fontSize: 14 },
-  continueInfo:    { flex: 1 },
-  continueName:    { fontWeight: '700', fontSize: 15 },
-  continueSub:     { fontSize: 13, marginTop: 2 },
-  arrow:           { fontSize: 28 },
+  section:          { marginBottom: 20 },
+  sectionTitle:     { fontWeight: '700', fontSize: 16, marginBottom: 10 },
 
-  testamentRow:    { flexDirection: 'row', gap: 12 },
-  testamentBtn:    { flex: 1, borderRadius: 12, padding: 18, alignItems: 'center' },
-  testamentLabel:  { color: '#fff', fontWeight: '700', fontSize: 16, textAlign: 'center' },
-  testamentCount:  { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 },
+  continueCard:     { borderRadius: 12, padding: 14, flexDirection: 'row',
+                      alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05,
+                      shadowRadius: 6, elevation: 2 },
+  avatar:           { width: 44, height: 44, borderRadius: 22, justifyContent: 'center',
+                      alignItems: 'center', marginRight: 12 },
+  avatarText:       { color: '#fff', fontWeight: '700', fontSize: 14 },
+  continueInfo:     { flex: 1 },
+  continueName:     { fontWeight: '700', fontSize: 15 },
+  continueSub:      { fontSize: 13, marginTop: 2 },
 
-  statsRow:        { borderRadius: 14, padding: 18, flexDirection: 'row',
-                     justifyContent: 'space-around', alignItems: 'center',
-                     marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.05,
-                     shadowRadius: 6, elevation: 2 },
-  statBox:         { alignItems: 'center' },
-  statNum:         { fontSize: 26, fontWeight: '800' },
-  statLabel:       { fontSize: 12, marginTop: 2 },
-  statDivider:     { width: 1, height: 40 },
+  testamentRow:     { flexDirection: 'row', gap: 12 },
+  testamentBtn:     { flex: 1, borderRadius: 12, padding: 18, alignItems: 'center' },
+  testamentLabel:   { color: '#fff', fontWeight: '700', fontSize: 16, textAlign: 'center' },
+  testamentCount:   { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 },
 
-  recentRow:       { borderRadius: 12, padding: 12, flexDirection: 'row',
-                     alignItems: 'center', marginBottom: 8, borderWidth: 1 },
-  recentAvatar:    { width: 38, height: 38, borderRadius: 19, justifyContent: 'center',
-                     alignItems: 'center', marginRight: 12, borderWidth: 1 },
-  recentAvatarText:{ fontWeight: '700', fontSize: 12 },
+  statsRow:         { borderRadius: 14, padding: 18, flexDirection: 'row',
+                      justifyContent: 'space-around', alignItems: 'center',
+                      marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.05,
+                      shadowRadius: 6, elevation: 2 },
+  statBox:          { alignItems: 'center' },
+  statNum:          { fontSize: 26, fontWeight: '800' },
+  statLabel:        { fontSize: 12, marginTop: 2 },
+  statDivider:      { width: 1, height: 40 },
+
+  recentRow:        { borderRadius: 12, padding: 12, flexDirection: 'row',
+                      alignItems: 'center', marginBottom: 8, borderWidth: 1 },
+  recentAvatar:     { width: 38, height: 38, borderRadius: 19, justifyContent: 'center',
+                      alignItems: 'center', marginRight: 12, borderWidth: 1 },
+  recentAvatarText: { fontWeight: '700', fontSize: 12 },
 });

@@ -5,6 +5,7 @@ import {
   StyleSheet, SafeAreaView, ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useBible } from '../../hooks/useBible';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -51,27 +52,38 @@ export default function RechercherScreen() {
         borderLeftColor: colors.accent }]}
       onPress={() => router.push(`/lecture/${item.bookAbrev}/${item.chapter}`)}
     >
-      <Text style={[styles.resultRef, { color: colors.accent }]}>
-        {item.book} {item.chapter}:{item.verse}
-      </Text>
+      <View style={styles.resultHeader}>
+        <Ionicons name="bookmark-outline" size={13} color={colors.accent} />
+        <Text style={[styles.resultRef, { color: colors.accent }]}>
+          {item.book} {item.chapter}:{item.verse}
+        </Text>
+        <Text style={[styles.resultTestament, { color: colors.textLight }]}>
+          {item.testament === 'ancien' ? 'A.T.' : 'N.T.'}
+        </Text>
+      </View>
       <HighlightedText text={item.text} query={query} />
-      <Text style={[styles.resultTestament, { color: colors.textLight }]}>
-        {item.testament === 'ancien' ? 'A.T.' : 'N.T.'}
-      </Text>
+      <View style={styles.resultFooter}>
+        <Ionicons name="arrow-forward-outline" size={12} color={colors.textLight} />
+        <Text style={[styles.resultFooterText, { color: colors.textLight }]}>
+          Lire le chapitre
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
+        <Ionicons name="search" size={20} color="rgba(255,255,255,0.8)" style={{ marginBottom: 4 }} />
         <Text style={styles.headerTitle}>Rechercher</Text>
       </View>
 
       {/* Barre de recherche */}
       <View style={[styles.searchBar, { backgroundColor: colors.surface,
         borderColor: colors.border }]}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Ionicons name="search-outline" size={18} color={colors.textLight} style={{ marginRight: 8 }} />
         <TextInput
           style={[styles.searchInput, { color: colors.textPrimary }]}
           placeholder="Rechercher un mot, un verset..."
@@ -82,21 +94,32 @@ export default function RechercherScreen() {
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={() => { setQuery(''); setResults([]); setSearched(false); }}>
-            <Text style={[styles.clearBtn, { color: colors.textLight }]}>✕</Text>
+            <Ionicons name="close-circle" size={18} color={colors.textLight} />
           </TouchableOpacity>
         )}
       </View>
 
       {/* Filtres */}
       <View style={styles.filters}>
-        {[['all','Tout'], ['ancien','A. Testament'], ['nouveau','N. Testament']].map(([key, label]) => (
+        {[
+          ['all',     'globe-outline',  'Tout'],
+          ['ancien',  'library-outline','A. Testament'],
+          ['nouveau', 'heart-outline',  'N. Testament'],
+        ].map(([key, icon, label]) => (
           <TouchableOpacity
             key={key}
-            style={[styles.filterBtn,
-              { backgroundColor: filter === key ? colors.primary : colors.surfaceWarm,
-                borderColor: filter === key ? colors.primary : colors.border }]}
+            style={[styles.filterBtn, {
+              backgroundColor: filter === key ? colors.primary : colors.surfaceWarm,
+              borderColor:     filter === key ? colors.primary : colors.border,
+            }]}
             onPress={() => handleFilterChange(key)}
           >
+            <Ionicons
+              name={icon}
+              size={13}
+              color={filter === key ? '#fff' : colors.textSecondary}
+              style={{ marginRight: 4 }}
+            />
             <Text style={[styles.filterText,
               { color: filter === key ? '#fff' : colors.textSecondary }]}>
               {label}
@@ -110,18 +133,37 @@ export default function RechercherScreen() {
       ) : (
         <>
           {searched && (
-            <Text style={[styles.resultCount, { color: colors.textLight }]}>
-              {results.length} résultat{results.length > 1 ? 's' : ''} pour « {query} »
-            </Text>
-          )}
-          {!searched && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>📖</Text>
-              <Text style={[styles.emptyText, { color: colors.textLight }]}>
-                Recherchez dans les{'\n'}31 000 versets de la Bible
+            <View style={styles.resultCountRow}>
+              <Ionicons name="list-outline" size={13} color={colors.textLight} />
+              <Text style={[styles.resultCount, { color: colors.textLight }]}>
+                {results.length} résultat{results.length > 1 ? 's' : ''} pour « {query} »
               </Text>
             </View>
           )}
+
+          {!searched && (
+            <View style={styles.emptyState}>
+              <View style={[styles.emptyIconBox, { backgroundColor: colors.surfaceWarm }]}>
+                <Ionicons name="book-outline" size={40} color={colors.textLight} />
+              </View>
+              <Text style={[styles.emptyText, { color: colors.textLight }]}>
+                Recherchez dans les{'\n'}31 000 versets de la Bible
+              </Text>
+              <View style={styles.emptyHints}>
+                {['Amour', 'Foi', 'Paix', 'Grâce'].map(hint => (
+                  <TouchableOpacity
+                    key={hint}
+                    style={[styles.hintChip, { backgroundColor: colors.surfaceWarm,
+                      borderColor: colors.border }]}
+                    onPress={() => handleSearch(hint)}
+                  >
+                    <Text style={[styles.hintText, { color: colors.textSecondary }]}>{hint}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
           <FlatList
             data={results}
             keyExtractor={item => item.id}
@@ -129,11 +171,14 @@ export default function RechercherScreen() {
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
             ListEmptyComponent={
-              searched
-                ? <Text style={[styles.noResult, { color: colors.textLight }]}>
+              searched ? (
+                <View style={styles.noResultBox}>
+                  <Ionicons name="search-outline" size={36} color={colors.textLight} />
+                  <Text style={[styles.noResult, { color: colors.textLight }]}>
                     Aucun résultat trouvé.
                   </Text>
-                : null
+                </View>
+              ) : null
             }
           />
         </>
@@ -145,25 +190,41 @@ export default function RechercherScreen() {
 const styles = StyleSheet.create({
   header:          { paddingTop: 16, paddingBottom: 20, alignItems: 'center' },
   headerTitle:     { color: '#fff', fontSize: 20, fontWeight: '700' },
+
   searchBar:       { flexDirection: 'row', alignItems: 'center', margin: 14,
                      borderRadius: 12, paddingHorizontal: 14, borderWidth: 1 },
-  searchIcon:      { fontSize: 16, marginRight: 8 },
   searchInput:     { flex: 1, height: 46, fontSize: 15 },
-  clearBtn:        { fontSize: 16, paddingLeft: 8 },
+
   filters:         { flexDirection: 'row', paddingHorizontal: 14, gap: 8, marginBottom: 4 },
-  filterBtn:       { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
+  filterBtn:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12,
+                     paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
   filterText:      { fontSize: 13, fontWeight: '600' },
+
+  resultCountRow:  { flexDirection: 'row', alignItems: 'center', gap: 5,
+                     paddingHorizontal: 16, marginBottom: 4 },
+  resultCount:     { fontSize: 13 },
+
   list:            { padding: 14, paddingBottom: 32 },
-  resultCount:     { fontSize: 13, paddingHorizontal: 16, marginBottom: 4 },
+
   resultCard:      { borderRadius: 12, padding: 14, marginBottom: 10,
                      borderLeftWidth: 4, shadowColor: '#000', shadowOpacity: 0.04,
                      shadowRadius: 4, elevation: 1 },
-  resultRef:       { fontWeight: '700', fontSize: 14, marginBottom: 4 },
+  resultHeader:    { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 6 },
+  resultRef:       { fontWeight: '700', fontSize: 14, flex: 1 },
+  resultTestament: { fontSize: 11, fontStyle: 'italic' },
   resultText:      { fontSize: 14, lineHeight: 20 },
   highlight:       { fontWeight: '700' },
-  resultTestament: { fontSize: 11, marginTop: 6, textAlign: 'right', fontStyle: 'italic' },
-  emptyState:      { alignItems: 'center', marginTop: 60 },
-  emptyEmoji:      { fontSize: 48, marginBottom: 14 },
-  emptyText:       { fontSize: 16, textAlign: 'center', lineHeight: 24 },
-  noResult:        { textAlign: 'center', marginTop: 40, fontSize: 15 },
+  resultFooter:    { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
+  resultFooterText:{ fontSize: 11 },
+
+  emptyState:      { alignItems: 'center', marginTop: 50, paddingHorizontal: 24 },
+  emptyIconBox:    { width: 80, height: 80, borderRadius: 24, justifyContent: 'center',
+                     alignItems: 'center', marginBottom: 14 },
+  emptyText:       { fontSize: 15, textAlign: 'center', lineHeight: 24, marginBottom: 20 },
+  emptyHints:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
+  hintChip:        { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  hintText:        { fontSize: 13, fontWeight: '600' },
+
+  noResultBox:     { alignItems: 'center', marginTop: 40, gap: 10 },
+  noResult:        { textAlign: 'center', fontSize: 15 },
 });
