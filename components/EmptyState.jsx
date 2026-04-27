@@ -1,4 +1,3 @@
-// components/EmptyState.jsx
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 

@@ -1,21 +1,23 @@
-// components/BottomTabBar.jsx
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 
-const TABS = [
-  { label: 'Accueil',    icon: 'home',          iconActive: 'home',           route: '/'          },
-  { label: 'Lire',       icon: 'book-outline',  iconActive: 'book',           route: '/lire'       },
-  { label: 'Rechercher', icon: 'search-outline',iconActive: 'search',         route: '/rechercher' },
-  { label: 'Favoris',   icon: 'bookmark-outline',iconActive: 'bookmark',      route: '/favoris'    },
-  { label: 'Plan',       icon: 'calendar-outline',iconActive: 'calendar',     route: '/plan'       },
-];
-
 export default function BottomTabBar() {
-  const router   = useRouter();
-  const pathname = usePathname();
+  const router     = useRouter();
+  const pathname   = usePathname();
   const { colors } = useTheme();
+  const { t }      = useLanguage();
+
+  // Onglets avec labels traduits dynamiquement
+  const TABS = [
+    { label: t.home,      icon: 'home-outline',     iconActive: 'home',      route: '/'           },
+    { label: t.read,      icon: 'book-outline',     iconActive: 'book',      route: '/lire'       },
+    { label: t.search,    icon: 'search-outline',   iconActive: 'search',    route: '/rechercher' },
+    { label: t.favorites, icon: 'bookmark-outline', iconActive: 'bookmark',  route: '/favoris'    },
+    { label: t.plan,      icon: 'calendar-outline', iconActive: 'calendar',  route: '/plan'       },
+  ];
 
   function isActive(route) {
     if (route === '/') return pathname === '/' || pathname === '/index';
@@ -41,7 +43,7 @@ export default function BottomTabBar() {
               color={active ? colors.tabActive : colors.tabInactive}
             />
             <Text style={[styles.label, {
-              color: active ? colors.tabActive : colors.tabInactive,
+              color:      active ? colors.tabActive : colors.tabInactive,
               fontWeight: active ? '700' : '500',
             }]}>
               {tab.label}
@@ -54,8 +56,8 @@ export default function BottomTabBar() {
 }
 
 const styles = StyleSheet.create({
-  bar:   { flexDirection: 'row', borderTopWidth: 1,
-           height: 70, paddingBottom: 8, paddingTop: 6 },
-  tab:   { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  bar: { flexDirection: 'row', borderTopWidth: 1,
+         height: 70, paddingBottom: 8, paddingTop: 6 },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   label: { fontSize: 10, marginTop: 3 },
 });

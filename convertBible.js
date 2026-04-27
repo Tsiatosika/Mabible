@@ -1,9 +1,6 @@
-// convertBible.js
 const fs   = require('fs');
 const path = require('path');
 
-// Ordre biblique exact — on mappe par POSITION, pas par abréviation
-// Cela évite tous les conflits d'abréviations ambiguës
 const ORDRE_BIBLIQUE = [
   { abrev: 'Gn',  nom: 'Genèse',           testament: 'ancien'  },
   { abrev: 'Ex',  nom: 'Exode',             testament: 'ancien'  },
@@ -36,7 +33,7 @@ const ORDRE_BIBLIQUE = [
   { abrev: 'Jl',  nom: 'Joël',              testament: 'ancien'  },
   { abrev: 'Am',  nom: 'Amos',              testament: 'ancien'  },
   { abrev: 'Ab',  nom: 'Abdias',            testament: 'ancien'  },
-  { abrev: 'Jon', nom: 'Jonas',             testament: 'ancien'  }, // position 32
+  { abrev: 'Jon', nom: 'Jonas',             testament: 'ancien'  }, 
   { abrev: 'Mi',  nom: 'Michée',            testament: 'ancien'  },
   { abrev: 'Na',  nom: 'Nahoum',            testament: 'ancien'  },
   { abrev: 'Ha',  nom: 'Habacuc',           testament: 'ancien'  },
@@ -47,7 +44,7 @@ const ORDRE_BIBLIQUE = [
   { abrev: 'Mt',  nom: 'Matthieu',          testament: 'nouveau' },
   { abrev: 'Mc',  nom: 'Marc',              testament: 'nouveau' },
   { abrev: 'Lc',  nom: 'Luc',              testament: 'nouveau' },
-  { abrev: 'Jn',  nom: 'Jean',              testament: 'nouveau' }, // position 44
+  { abrev: 'Jn',  nom: 'Jean',              testament: 'nouveau' }, 
   { abrev: 'Ac',  nom: 'Actes',             testament: 'nouveau' },
   { abrev: 'Rm',  nom: 'Romains',           testament: 'nouveau' },
   { abrev: '1Co', nom: '1 Corinthiens',     testament: 'nouveau' },
@@ -73,7 +70,6 @@ const ORDRE_BIBLIQUE = [
   { abrev: 'Ap',  nom: 'Apocalypse',        testament: 'nouveau' },
 ];
 
-// ── Lecture ──────────────────────────────────────────────────────────────────
 const inputPath = path.join(__dirname, 'bible.json');
 if (!fs.existsSync(inputPath)) {
   console.error('❌ bible.json introuvable !');
@@ -88,12 +84,10 @@ raw = raw.replace(/^[^\[{]*/, '');
 const source = JSON.parse(raw);
 console.log(`✅ ${source.length} livres trouvés dans le fichier source`);
 
-// ── Vérification du nombre de livres ─────────────────────────────────────────
 if (source.length !== 66) {
   console.warn(`⚠️  Attention : ${source.length} livres au lieu de 66 !`);
 }
 
-// ── Conversion par POSITION ───────────────────────────────────────────────────
 const livres = [];
 let totalVersets = 0;
 
@@ -126,7 +120,6 @@ for (let i = 0; i < source.length; i++) {
   });
 }
 
-// ── Vérification finale ───────────────────────────────────────────────────────
 console.log('');
 const manquants = ORDRE_BIBLIQUE
   .map(m => m.abrev)
@@ -138,7 +131,6 @@ if (manquants.length > 0) {
   console.log('✅ Les 66 livres sont présents !');
 }
 
-// ── Écriture ──────────────────────────────────────────────────────────────────
 const outputPath = path.join(__dirname, 'assets', 'bible.json');
 fs.writeFileSync(outputPath, JSON.stringify({ livres }), 'utf8');
 

@@ -1,4 +1,3 @@
-// components/VersetCard.jsx
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 

@@ -1,10 +1,9 @@
-// hooks/useBible.js
 import { useState, useEffect } from 'react';
-import { BIBLE_STRUCTURE } from '../constants/bibleStructure';
+import { BIBLE_STRUCTURE, KJV_NAME_TO_ABREV } from '../constants/bibleStructure';
+import { useLanguage } from '../context/LanguageContext';
 
-let bibleCache = null;
+const cache = { fr: null, en: null };
 
-// ── Table de correspondance nom complet / abréviations → abrev officielle ──
 const ALL_BOOKS_FLAT = [
   ...BIBLE_STRUCTURE.ancienTestament.categories.flatMap(c => c.livres),
   ...BIBLE_STRUCTURE.nouveauTestament.categories.flatMap(c => c.livres),
@@ -18,56 +17,48 @@ function normalize(str) {
     .trim();
 }
 
-// Construit une map: toutes les formes possibles d'un nom → abrev
-const BOOK_LOOKUP = new Map();
-for (const livre of ALL_BOOKS_FLAT) {
-  // abrev exacte
-  BOOK_LOOKUP.set(normalize(livre.abrev), livre.abrev);
-  // nom complet normalisé
-  BOOK_LOOKUP.set(normalize(livre.nom), livre.abrev);
-  // nom sans espaces (ex: "1rois" → "1R")
-  BOOK_LOOKUP.set(normalize(livre.nom).replace(/\s/g, ''), livre.abrev);
-  // abrev en minuscule sans chiffres en tête (ex: "jean" pour "Jn")
-  BOOK_LOOKUP.set(normalize(livre.abrev).replace(/\d/g, ''), livre.abrev);
+function buildLookup(lang) {
+  const map = new Map();
+  for (const livre of ALL_BOOKS_FLAT) {
+    const nomLang = lang === 'en' ? livre.nomEn : livre.nom;
+    map.set(normalize(livre.abrev), livre.abrev);
+    // nom dans la langue
+    map.set(normalize(nomLang), livre.abrev);
+    map.set(normalize(nomLang).replace(/\s/g, ''), livre.abrev);
+    map.set(normalize(livre.kjvName), livre.abrev);
+    map.set(normalize(livre.kjvName).replace(/\s/g, ''), livre.abrev);
+    // nom français toujours disponible
+    map.set(normalize(livre.nom), livre.abrev);
+    map.set(normalize(livre.nom).replace(/\s/g, ''), livre.abrev);
+  }
+  return map;
 }
 
-// Essaie de parser une référence biblique dans la query
-// Retourne { abrev, chapter, verse } ou null
-function parseReference(query) {
-  const q = query.trim();
-
-  // Regex: (nom du livre) (chapitre) [: (verset)]
-  // Exemples: "Jean 3:16", "Jn 3:16", "1 Rois 2:3", "Genèse 1", "Gn 1:1"
+function parseReference(query, lookup) {
+  const q     = query.trim();
   const match = q.match(
     /^(\d?\s?[a-zA-ZÀ-ÿ]+(?:\s[a-zA-ZÀ-ÿ]+)*)\s+(\d+)(?::(\d+))?$/i
   );
   if (!match) return null;
 
-  const rawBook   = match[1].trim();
-  const chapter   = parseInt(match[2], 10);
-  const verse     = match[3] ? parseInt(match[3], 10) : null;
+  const rawBook = match[1].trim();
+  const chapter = parseInt(match[2], 10);
+  const verse   = match[3] ? parseInt(match[3], 10) : null;
 
-  // Cherche le livre dans la table
   const normBook = normalize(rawBook);
-  let abrev = BOOK_LOOKUP.get(normBook);
+  let abrev = lookup.get(normBook);
 
-  // Si pas trouvé exactement, cherche par préfixe (ex: "Jean" → "Jn")
   if (!abrev) {
-    for (const [key, val] of BOOK_LOOKUP.entries()) {
+    for (const [key, val] of lookup.entries()) {
       if (key.startsWith(normBook) || normBook.startsWith(key)) {
         abrev = val;
         break;
       }
     }
   }
-
-  // Recherche floue : le nom normalisé contient la query ou inversement
   if (!abrev) {
-    for (const [key, val] of BOOK_LOOKUP.entries()) {
-      if (key.includes(normBook)) {
-        abrev = val;
-        break;
-      }
+    for (const [key, val] of lookup.entries()) {
+      if (key.includes(normBook)) { abrev = val; break; }
     }
   }
 
@@ -75,27 +66,97 @@ function parseReference(query) {
   return { abrev, chapter, verse };
 }
 
+function buildKjvBible(rawVerses) {
+  const livresMap = new Map(); 
+
+  for (const v of rawVerses) {
+    const abrev = KJV_NAME_TO_ABREV[v.book_name];
+    if (!abrev) continue;
+
+    const bookInfo = ALL_BOOKS_FLAT.find(b => b.abrev === abrev);
+    if (!bookInfo) continue;
+
+    if (!livresMap.has(abrev)) {
+      livresMap.set(abrev, {
+        abrev,
+        nom:      bookInfo.nomEn,
+        testament: BIBLE_STRUCTURE.ancienTestament.categories
+          .flatMap(c => c.livres).some(b => b.abrev === abrev)
+          ? 'ancien' : 'nouveau',
+        chapitres: [],
+        _chapMap: new Map(),
+      });
+    }
+
+    const livre = livresMap.get(abrev);
+    if (!livre._chapMap.has(v.chapter)) {
+      const newChap = { numero: v.chapter, titre: null, versets: [] };
+      livre._chapMap.set(v.chapter, newChap);
+      livre.chapitres.push(newChap);
+    }
+    livre._chapMap.get(v.chapter).versets.push({
+      numero: v.verse,
+      texte:  v.text,
+    });
+  }
+
+  // Trier chapitres et versets
+  const livres = [];
+  for (const livre of livresMap.values()) {
+    livre.chapitres.sort((a, b) => a.numero - b.numero);
+    for (const chap of livre.chapitres) {
+      chap.versets.sort((a, b) => a.numero - b.numero);
+    }
+    delete livre._chapMap;
+    livres.push(livre);
+  }
+
+  // Trier selon l'ordre canonique
+  const order = ALL_BOOKS_FLAT.map(b => b.abrev);
+  livres.sort((a, b) => order.indexOf(a.abrev) - order.indexOf(b.abrev));
+
+  return { livres };
+}
+
 export function useBible() {
+  const { language } = useLanguage();
   const [bible,   setBible]   = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lookup,  setLookup]  = useState(() => buildLookup('fr'));
 
   useEffect(() => {
-    if (bibleCache) {
-      setBible(bibleCache);
+    setLoading(true);
+    setBible(null);
+
+    // Utiliser le cache si disponible
+    if (cache[language]) {
+      setBible(cache[language]);
+      setLookup(buildLookup(language));
       setLoading(false);
       return;
     }
+
     try {
-      const data  = require('../assets/bible.json');
-      bibleCache  = data;
-      setBible(data);
+      if (language === 'en') {
+        const raw  = require('../assets/kjv.json');
+        const verses = raw.verses || raw;
+        const built  = buildKjvBible(verses);
+        cache['en']  = built;
+        setBible(built);
+      } else {
+        const data  = require('../assets/bible.json');
+        cache['fr'] = data;
+        setBible(data);
+      }
     } catch (e) {
-      console.warn('bible.json introuvable');
-      bibleCache = { livres: [] };
-      setBible(bibleCache);
+      console.warn('Erreur chargement bible:', e);
+      cache[language] = { livres: [] };
+      setBible(cache[language]);
     }
+
+    setLookup(buildLookup(language));
     setLoading(false);
-  }, []);
+  }, [language]);
 
   function getChapter(bookAbrev, chapterNum) {
     if (!bible) return null;
@@ -119,49 +180,46 @@ export function useBible() {
   function searchVersets(query, filter = 'all') {
     if (!bible || !query || query.trim().length < 2) return [];
 
-    // ── 1. Essai de recherche par référence ──────────────────────────────
-    const ref = parseReference(query.trim());
+    // 1. Recherche par référence
+    const ref = parseReference(query.trim(), lookup);
     if (ref) {
       const livre = bible.livres.find(l => l.abrev === ref.abrev);
       if (livre) {
-        // Filtre testament
-        if (filter === 'ancien' && livre.testament !== 'ancien') return [];
+        if (filter === 'ancien'  && livre.testament !== 'ancien')  return [];
         if (filter === 'nouveau' && livre.testament !== 'nouveau') return [];
 
         const chapitre = livre.chapitres.find(c => c.numero === ref.chapter);
         if (!chapitre) return [];
 
-        // Verset précis demandé
         if (ref.verse !== null) {
           const verset = chapitre.versets.find(v => v.numero === ref.verse);
           if (!verset) return [];
           return [{
-            id:        `${livre.abrev}-${chapitre.numero}-${verset.numero}`,
-            book:      livre.nom,
-            bookAbrev: livre.abrev,
-            testament: livre.testament,
-            chapter:   chapitre.numero,
-            verse:     verset.numero,
-            text:      verset.texte,
+            id:          `${livre.abrev}-${chapitre.numero}-${verset.numero}`,
+            book:        livre.nom,
+            bookAbrev:   livre.abrev,
+            testament:   livre.testament,
+            chapter:     chapitre.numero,
+            verse:       verset.numero,
+            text:        verset.texte,
             isReference: true,
           }];
         }
 
-        // Tout le chapitre
         return chapitre.versets.map(verset => ({
-          id:        `${livre.abrev}-${chapitre.numero}-${verset.numero}`,
-          book:      livre.nom,
-          bookAbrev: livre.abrev,
-          testament: livre.testament,
-          chapter:   chapitre.numero,
-          verse:     verset.numero,
-          text:      verset.texte,
+          id:          `${livre.abrev}-${chapitre.numero}-${verset.numero}`,
+          book:        livre.nom,
+          bookAbrev:   livre.abrev,
+          testament:   livre.testament,
+          chapter:     chapitre.numero,
+          verse:       verset.numero,
+          text:        verset.texte,
           isReference: true,
         }));
       }
     }
 
-    // ── 2. Recherche plein texte classique ───────────────────────────────
+    // 2. Recherche plein texte
     const q       = normalize(query);
     const results = [];
     const seen    = new Set();
@@ -180,12 +238,12 @@ export function useBible() {
           if (norm.includes(q)) {
             results.push({
               id,
-              book:      livre.nom,
-              bookAbrev: livre.abrev,
-              testament: livre.testament,
-              chapter:   chapitre.numero,
-              verse:     verset.numero,
-              text:      verset.texte,
+              book:        livre.nom,
+              bookAbrev:   livre.abrev,
+              testament:   livre.testament,
+              chapter:     chapitre.numero,
+              verse:       verset.numero,
+              text:        verset.texte,
               isReference: false,
             });
           }

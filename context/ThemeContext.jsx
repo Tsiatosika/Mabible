@@ -1,4 +1,3 @@
-  // context/ThemeContext.jsx
   import { createContext, useContext, useState, useEffect, useCallback } from 'react';
   import { getSettings, saveSettings } from '../utils/storage';
 

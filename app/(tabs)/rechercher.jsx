@@ -1,4 +1,3 @@
-// app/(tabs)/rechercher.jsx
 import { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, FlatList, TouchableOpacity,
@@ -8,11 +7,13 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useBible } from '../../hooks/useBible';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function RechercherScreen() {
   const router = useRouter();
   const { searchVersets, loading } = useBible();
-  const { colors } = useTheme();
+  const { colors }   = useTheme();
+  const { t, isFr }  = useLanguage();
 
   const [query,    setQuery]    = useState('');
   const [filter,   setFilter]   = useState('all');
@@ -48,8 +49,7 @@ export default function RechercherScreen() {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.resultCard, { backgroundColor: colors.surface,
-        borderLeftColor: colors.accent }]}
+      style={[styles.resultCard, { backgroundColor: colors.surface, borderLeftColor: colors.accent }]}
       onPress={() => router.push(`/lecture/${item.bookAbrev}/${item.chapter}`)}
     >
       <View style={styles.resultHeader}>
@@ -58,18 +58,24 @@ export default function RechercherScreen() {
           {item.book} {item.chapter}:{item.verse}
         </Text>
         <Text style={[styles.resultTestament, { color: colors.textLight }]}>
-          {item.testament === 'ancien' ? 'A.T.' : 'N.T.'}
+          {item.testament === 'ancien'
+            ? (isFr ? 'A.T.' : 'O.T.')
+            : (isFr ? 'N.T.' : 'N.T.')}
         </Text>
       </View>
       <HighlightedText text={item.text} query={query} />
       <View style={styles.resultFooter}>
         <Ionicons name="arrow-forward-outline" size={12} color={colors.textLight} />
         <Text style={[styles.resultFooterText, { color: colors.textLight }]}>
-          Lire le chapitre
+          {' '}{t.readChapter}
         </Text>
       </View>
     </TouchableOpacity>
   );
+
+  const hints = isFr
+    ? ['Amour', 'Foi', 'Paix', 'Grâce']
+    : ['Love', 'Faith', 'Peace', 'Grace'];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -77,16 +83,15 @@ export default function RechercherScreen() {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
         <Ionicons name="search" size={20} color="rgba(255,255,255,0.8)" style={{ marginBottom: 4 }} />
-        <Text style={styles.headerTitle}>Rechercher</Text>
+        <Text style={styles.headerTitle}>{t.search}</Text>
       </View>
 
       {/* Barre de recherche */}
-      <View style={[styles.searchBar, { backgroundColor: colors.surface,
-        borderColor: colors.border }]}>
+      <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Ionicons name="search-outline" size={18} color={colors.textLight} style={{ marginRight: 8 }} />
         <TextInput
           style={[styles.searchInput, { color: colors.textPrimary }]}
-          placeholder="Rechercher un mot, un verset..."
+          placeholder={t.searchPlaceholder}
           placeholderTextColor={colors.placeholder}
           value={query}
           onChangeText={handleSearch}
@@ -102,9 +107,9 @@ export default function RechercherScreen() {
       {/* Filtres */}
       <View style={styles.filters}>
         {[
-          ['all',     'globe-outline',  'Tout'],
-          ['ancien',  'library-outline','A. Testament'],
-          ['nouveau', 'heart-outline',  'N. Testament'],
+          ['all',     'globe-outline',   t.all],
+          ['ancien',  'library-outline', t.oldT],
+          ['nouveau', 'heart-outline',   t.newT],
         ].map(([key, icon, label]) => (
           <TouchableOpacity
             key={key}
@@ -114,12 +119,9 @@ export default function RechercherScreen() {
             }]}
             onPress={() => handleFilterChange(key)}
           >
-            <Ionicons
-              name={icon}
-              size={13}
+            <Ionicons name={icon} size={13}
               color={filter === key ? '#fff' : colors.textSecondary}
-              style={{ marginRight: 4 }}
-            />
+              style={{ marginRight: 4 }} />
             <Text style={[styles.filterText,
               { color: filter === key ? '#fff' : colors.textSecondary }]}>
               {label}
@@ -136,7 +138,7 @@ export default function RechercherScreen() {
             <View style={styles.resultCountRow}>
               <Ionicons name="list-outline" size={13} color={colors.textLight} />
               <Text style={[styles.resultCount, { color: colors.textLight }]}>
-                {results.length} résultat{results.length > 1 ? 's' : ''} pour « {query} »
+                {' '}{t.results(results.length, query)}
               </Text>
             </View>
           )}
@@ -147,14 +149,13 @@ export default function RechercherScreen() {
                 <Ionicons name="book-outline" size={40} color={colors.textLight} />
               </View>
               <Text style={[styles.emptyText, { color: colors.textLight }]}>
-                Recherchez dans les{'\n'}31 000 versets de la Bible
+                {t.searchPrompt}
               </Text>
               <View style={styles.emptyHints}>
-                {['Amour', 'Foi', 'Paix', 'Grâce'].map(hint => (
+                {hints.map(hint => (
                   <TouchableOpacity
                     key={hint}
-                    style={[styles.hintChip, { backgroundColor: colors.surfaceWarm,
-                      borderColor: colors.border }]}
+                    style={[styles.hintChip, { backgroundColor: colors.surfaceWarm, borderColor: colors.border }]}
                     onPress={() => handleSearch(hint)}
                   >
                     <Text style={[styles.hintText, { color: colors.textSecondary }]}>{hint}</Text>
@@ -174,9 +175,7 @@ export default function RechercherScreen() {
               searched ? (
                 <View style={styles.noResultBox}>
                   <Ionicons name="search-outline" size={36} color={colors.textLight} />
-                  <Text style={[styles.noResult, { color: colors.textLight }]}>
-                    Aucun résultat trouvé.
-                  </Text>
+                  <Text style={[styles.noResult, { color: colors.textLight }]}>{t.noResult}</Text>
                 </View>
               ) : null
             }
@@ -190,22 +189,17 @@ export default function RechercherScreen() {
 const styles = StyleSheet.create({
   header:          { paddingTop: 16, paddingBottom: 20, alignItems: 'center' },
   headerTitle:     { color: '#fff', fontSize: 20, fontWeight: '700' },
-
   searchBar:       { flexDirection: 'row', alignItems: 'center', margin: 14,
                      borderRadius: 12, paddingHorizontal: 14, borderWidth: 1 },
   searchInput:     { flex: 1, height: 46, fontSize: 15 },
-
   filters:         { flexDirection: 'row', paddingHorizontal: 14, gap: 8, marginBottom: 4 },
   filterBtn:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12,
                      paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
   filterText:      { fontSize: 13, fontWeight: '600' },
-
   resultCountRow:  { flexDirection: 'row', alignItems: 'center', gap: 5,
                      paddingHorizontal: 16, marginBottom: 4 },
   resultCount:     { fontSize: 13 },
-
   list:            { padding: 14, paddingBottom: 32 },
-
   resultCard:      { borderRadius: 12, padding: 14, marginBottom: 10,
                      borderLeftWidth: 4, shadowColor: '#000', shadowOpacity: 0.04,
                      shadowRadius: 4, elevation: 1 },
@@ -216,7 +210,6 @@ const styles = StyleSheet.create({
   highlight:       { fontWeight: '700' },
   resultFooter:    { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8 },
   resultFooterText:{ fontSize: 11 },
-
   emptyState:      { alignItems: 'center', marginTop: 50, paddingHorizontal: 24 },
   emptyIconBox:    { width: 80, height: 80, borderRadius: 24, justifyContent: 'center',
                      alignItems: 'center', marginBottom: 14 },
@@ -224,7 +217,6 @@ const styles = StyleSheet.create({
   emptyHints:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   hintChip:        { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
   hintText:        { fontSize: 13, fontWeight: '600' },
-
   noResultBox:     { alignItems: 'center', marginTop: 40, gap: 10 },
   noResult:        { textAlign: 'center', fontSize: 15 },
 });

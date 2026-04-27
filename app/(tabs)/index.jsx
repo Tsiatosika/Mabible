@@ -1,4 +1,3 @@
-// app/(tabs)/index.jsx
 import { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
@@ -7,21 +6,31 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getLastPosition, getBookmarks, getReadingHistory } from '../../utils/storage';
-import { DAILY_VERSES, BIBLE_STRUCTURE } from '../../constants/bibleStructure';
+import { DAILY_VERSES } from '../../constants/bibleStructure';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { BIBLE_STRUCTURE } from '../../constants/bibleStructure';
+
 
 const ALL_BOOKS_FLAT = [
   ...BIBLE_STRUCTURE.ancienTestament.categories.flatMap(c => c.livres),
   ...BIBLE_STRUCTURE.nouveauTestament.categories.flatMap(c => c.livres),
 ];
 
-function getBookAbrev(bookName) {
-  return ALL_BOOKS_FLAT.find(b => b.nom === bookName)?.abrev || null;
+
+function getBookInfo(bookName) {
+  // Cherche par nom français ou anglais
+  return ALL_BOOKS_FLAT.find(
+    b => b.nom === bookName ||
+         b.nomEn === bookName ||
+         b.abrev === bookName
+  ) || null;
 }
 
 export default function AccueilScreen() {
-  const router     = useRouter();
-  const { colors } = useTheme();
+  const router      = useRouter();
+  const { colors }  = useTheme();
+  const { t, isFr } = useLanguage();
 
   const [verseOfDay,   setVerseOfDay]   = useState(null);
   const [lastPosition, setLastPosition] = useState(null);
@@ -57,13 +66,10 @@ export default function AccueilScreen() {
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
         <View style={styles.headerLeft} />
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Ma Bible</Text>
-          <Text style={styles.headerSub}>Version Louis Segond</Text>
+          <Text style={styles.headerTitle}>{t.appTitle}</Text>
+          <Text style={styles.headerSub}>{t.appSubtitle}</Text>
         </View>
-        <TouchableOpacity
-          style={styles.headerRight}
-          onPress={() => router.push('/parametres')}
-        >
+        <TouchableOpacity style={styles.headerRight} onPress={() => router.push('/parametres')}>
           <Ionicons name="settings-outline" size={22} color="rgba(255,255,255,0.9)" />
         </TouchableOpacity>
       </View>
@@ -75,14 +81,18 @@ export default function AccueilScreen() {
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.cardTitleRow}>
               <Ionicons name="sunny-outline" size={16} color={colors.accent} />
-              <Text style={[styles.cardTitle, { color: colors.accent }]}>Verset du jour</Text>
+              <Text style={[styles.cardTitle, { color: colors.accent }]}>
+                {' '}{t.verseOfDay}
+              </Text>
             </View>
             <Text style={[styles.verseText, { color: colors.textPrimary }]}>
-              « {verseOfDay.texte} »
+              « {isFr ? verseOfDay.texte : verseOfDay.texteEn} »
             </Text>
             <View style={styles.verseRefRow}>
               <Ionicons name="bookmark-outline" size={13} color={colors.accent} />
-              <Text style={[styles.verseRef, { color: colors.accent }]}> {verseOfDay.ref}</Text>
+              <Text style={[styles.verseRef, { color: colors.accent }]}>
+                {' '}{isFr ? verseOfDay.ref : verseOfDay.refEn}
+              </Text>
             </View>
           </View>
         )}
@@ -91,7 +101,7 @@ export default function AccueilScreen() {
         {lastPosition && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              Continuer la lecture
+              {t.continueReading}
             </Text>
             <TouchableOpacity
               style={[styles.continueCard, { backgroundColor: colors.surface }]}
@@ -110,7 +120,7 @@ export default function AccueilScreen() {
                   {lastPosition.book}
                 </Text>
                 <Text style={[styles.continueSub, { color: colors.accent }]}>
-                  Chapitre {lastPosition.chapter}
+                  {t.chapter} {lastPosition.chapter}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={22} color={colors.textLight} />
@@ -120,7 +130,7 @@ export default function AccueilScreen() {
 
         {/* Accès rapide */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Accès rapide</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t.quickAccess}</Text>
           <View style={styles.testamentRow}>
             <TouchableOpacity
               style={[styles.testamentBtn, { backgroundColor: colors.primary }]}
@@ -128,8 +138,8 @@ export default function AccueilScreen() {
             >
               <Ionicons name="library-outline" size={24} color="rgba(255,255,255,0.9)"
                 style={{ marginBottom: 6 }} />
-              <Text style={styles.testamentLabel}>Ancien{'\n'}Testament</Text>
-              <Text style={styles.testamentCount}>39 livres</Text>
+              <Text style={styles.testamentLabel}>{t.oldTestament}</Text>
+              <Text style={styles.testamentCount}>{t.books39}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.testamentBtn, { backgroundColor: colors.primaryLight }]}
@@ -137,8 +147,8 @@ export default function AccueilScreen() {
             >
               <Ionicons name="heart-outline" size={24} color="rgba(255,255,255,0.9)"
                 style={{ marginBottom: 6 }} />
-              <Text style={styles.testamentLabel}>Nouveau{'\n'}Testament</Text>
-              <Text style={styles.testamentCount}>27 livres</Text>
+              <Text style={styles.testamentLabel}>{t.newTestament}</Text>
+              <Text style={styles.testamentCount}>{t.books27}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -148,24 +158,24 @@ export default function AccueilScreen() {
           <View style={styles.statBox}>
             <Ionicons name="bookmark" size={18} color={colors.primary} style={{ marginBottom: 4 }} />
             <Text style={[styles.statNum, { color: colors.primary }]}>{stats.favoris}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Favoris</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t.favorites}</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.divider }]} />
           <View style={styles.statBox}>
             <Ionicons name="calendar" size={18} color={colors.primary} style={{ marginBottom: 4 }} />
             <Text style={[styles.statNum, { color: colors.primary }]}>{stats.jours}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Jours lus</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t.days}</Text>
           </View>
           <View style={[styles.statDivider, { backgroundColor: colors.divider }]} />
           <View style={styles.statBox}>
             <Ionicons name="trending-up" size={18} color={colors.primary} style={{ marginBottom: 4 }} />
             <Text style={[styles.statNum, { color: colors.primary }]}>{stats.progression}%</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Progression</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t.progress}</Text>
           </View>
         </View>
 
         {/* Livres récents */}
-        <RecentBooks router={router} colors={colors} />
+        <RecentBooks router={router} colors={colors} t={t} />
 
       </ScrollView>
     </SafeAreaView>
@@ -174,6 +184,7 @@ export default function AccueilScreen() {
 
 function RecentBooks({ router, colors }) {
   const [history, setHistory] = useState([]);
+  const { t, isFr }           = useLanguage(); // ← ajout
 
   useFocusEffect(
     useCallback(() => {
@@ -195,36 +206,46 @@ function RecentBooks({ router, colors }) {
   return (
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-        Récemment lus
+        {t.recentlyRead}
       </Text>
       {history.map((item, idx) => {
-        const abrev = ALL_BOOKS_FLAT.find(b => b.nom === item.book)?.abrev;
+        // Retrouver le bookInfo depuis le nom stocké
+        const bookInfo = getBookInfo(item.book);
+        const abrev    = bookInfo?.abrev;
+        // Nom selon la langue courante
+        const bookName = bookInfo
+          ? (isFr ? bookInfo.nom : bookInfo.nomEn)
+          : item.book;
+        const chapLabel = isFr
+          ? `Chapitre ${item.chapter}`
+          : `Chapter ${item.chapter}`;
+
         return (
           <TouchableOpacity
             key={idx}
             style={[styles.recentRow, {
               backgroundColor: colors.surface,
-              borderColor: colors.border,
+              borderColor:     colors.border,
             }]}
             onPress={() => abrev && router.push(`/lecture/${abrev}/${item.chapter}`)}
           >
             <View style={[styles.recentAvatar, {
               backgroundColor: colors.surfaceWarm,
-              borderColor: colors.border,
+              borderColor:     colors.border,
             }]}>
               <Text style={[styles.recentAvatarText, { color: colors.primary }]}>
-                {item.book.slice(0, 2).toUpperCase()}
+                {(abrev || item.book).slice(0, 2).toUpperCase()}
               </Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.continueName, { color: colors.textPrimary }]}>
-                {item.book}
+                {bookName}
               </Text>
               <Text style={[styles.continueSub, { color: colors.textLight }]}>
-                Chapitre {item.chapter}
+                {chapLabel}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+            <Text style={[styles.arrow, { color: colors.textLight }]}>›</Text>
           </TouchableOpacity>
         );
       })}
@@ -240,20 +261,16 @@ const styles = StyleSheet.create({
   headerRight:      { width: 44, alignItems: 'flex-end', justifyContent: 'center' },
   headerTitle:      { color: '#fff', fontSize: 22, fontWeight: '700', letterSpacing: 0.5 },
   headerSub:        { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
-
   scroll:           { padding: 16, paddingBottom: 40 },
-
   card:             { borderRadius: 14, padding: 18, marginBottom: 20,
                       shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
-  cardTitleRow:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  cardTitleRow:     { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   cardTitle:        { fontWeight: '700', fontSize: 15 },
   verseText:        { fontSize: 15, fontStyle: 'italic', lineHeight: 24 },
   verseRefRow:      { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   verseRef:         { fontWeight: '600', fontSize: 13 },
-
   section:          { marginBottom: 20 },
   sectionTitle:     { fontWeight: '700', fontSize: 16, marginBottom: 10 },
-
   continueCard:     { borderRadius: 12, padding: 14, flexDirection: 'row',
                       alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05,
                       shadowRadius: 6, elevation: 2 },
@@ -263,12 +280,10 @@ const styles = StyleSheet.create({
   continueInfo:     { flex: 1 },
   continueName:     { fontWeight: '700', fontSize: 15 },
   continueSub:      { fontSize: 13, marginTop: 2 },
-
   testamentRow:     { flexDirection: 'row', gap: 12 },
   testamentBtn:     { flex: 1, borderRadius: 12, padding: 18, alignItems: 'center' },
   testamentLabel:   { color: '#fff', fontWeight: '700', fontSize: 16, textAlign: 'center' },
   testamentCount:   { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 },
-
   statsRow:         { borderRadius: 14, padding: 18, flexDirection: 'row',
                       justifyContent: 'space-around', alignItems: 'center',
                       marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.05,
@@ -277,7 +292,6 @@ const styles = StyleSheet.create({
   statNum:          { fontSize: 26, fontWeight: '800' },
   statLabel:        { fontSize: 12, marginTop: 2 },
   statDivider:      { width: 1, height: 40 },
-
   recentRow:        { borderRadius: 12, padding: 12, flexDirection: 'row',
                       alignItems: 'center', marginBottom: 8, borderWidth: 1 },
   recentAvatar:     { width: 38, height: 38, borderRadius: 19, justifyContent: 'center',

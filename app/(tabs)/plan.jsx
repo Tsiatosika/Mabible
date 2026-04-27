@@ -1,4 +1,3 @@
-// app/(tabs)/plan.jsx
 import { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
@@ -6,57 +5,70 @@ import {
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 
-const PLANS = [
+// ── Données des plans (statiques) ────────────────────────────────────────────
+const PLANS_DATA = [
   {
-    id: 'bible_1an',
-    titre: 'Bible en 1 an',
-    description: 'Lisez toute la Bible en 365 jours',
-    icon: 'library',
-    duree: '365 jours',
+    id:              'bible_1an',
+    titreFr:         'Bible en 1 an',
+    titreEn:         'Bible in 1 year',
+    descFr:          'Lisez toute la Bible en 365 jours',
+    descEn:          'Read the entire Bible in 365 days',
+    icon:            'library',
+    duree:           365,
     chapitresParJour: 3,
-    total: 1189,
+    total:           1189,
   },
   {
-    id: 'nouveau_testament',
-    titre: 'Nouveau Testament en 30 jours',
-    description: 'Parcourez les 27 livres du N.T.',
-    icon: 'cross',
-    duree: '30 jours',
+    id:              'nouveau_testament',
+    titreFr:         'Nouveau Testament en 30 jours',
+    titreEn:         'New Testament in 30 days',
+    descFr:          'Parcourez les 27 livres du N.T.',
+    descEn:          'Go through all 27 N.T. books',
+    icon:            'cross',
+    duree:           30,
     chapitresParJour: 9,
-    total: 260,
+    total:           260,
   },
   {
-    id: 'psaumes_30',
-    titre: 'Psaumes en 30 jours',
-    description: '150 Psaumes en un mois',
-    icon: 'musical-notes',
-    duree: '30 jours',
+    id:              'psaumes_30',
+    titreFr:         'Psaumes en 30 jours',
+    titreEn:         'Psalms in 30 days',
+    descFr:          '150 Psaumes en un mois',
+    descEn:          '150 Psalms in one month',
+    icon:            'musical-notes',
+    duree:           30,
     chapitresParJour: 5,
-    total: 150,
+    total:           150,
   },
   {
-    id: 'evangiles',
-    titre: 'Les 4 Évangiles en 30 jours',
-    description: 'Matthieu, Marc, Luc et Jean',
-    icon: 'heart',
-    duree: '30 jours',
+    id:              'evangiles',
+    titreFr:         'Les 4 Évangiles en 30 jours',
+    titreEn:         'The 4 Gospels in 30 days',
+    descFr:          'Matthieu, Marc, Luc et Jean',
+    descEn:          'Matthew, Mark, Luke and John',
+    icon:            'heart',
+    duree:           30,
     chapitresParJour: 3,
-    total: 89,
+    total:           89,
   },
   {
-    id: 'proverbes',
-    titre: 'Proverbes en 31 jours',
-    description: 'Un chapitre par jour',
-    icon: 'bulb',
-    duree: '31 jours',
+    id:              'proverbes',
+    titreFr:         'Proverbes en 31 jours',
+    titreEn:         'Proverbs in 31 days',
+    descFr:          'Un chapitre par jour',
+    descEn:          'One chapter per day',
+    icon:            'bulb',
+    duree:           31,
     chapitresParJour: 1,
-    total: 31,
+    total:           31,
   },
 ];
 
+// ── Chapitres par plan ────────────────────────────────────────────────────────
 const PLAN_CHAPITRES = {
   bible_1an: [
     ...Array.from({ length: 50  }, (_, i) => ({ book: 'Gn',  chapter: i + 1 })),
@@ -124,17 +136,31 @@ const PLAN_CHAPITRES = {
 const STORAGE_KEY = '@bible:plan_actif';
 
 export default function PlanScreen() {
-  const router     = useRouter();
-  const { colors } = useTheme();
+  const router      = useRouter();
+  const { colors }  = useTheme();
+  const { t, isFr } = useLanguage();
 
-  const [planActif,    setPlanActif]    = useState(null);
-  const [progression,  setProgression]  = useState([]);
-  const [onglet,       setOnglet]       = useState('plans');
-
+  const [planActif,       setPlanActif]       = useState(null);
+  const [progression,     setProgression]     = useState([]);
+  const [onglet,          setOnglet]          = useState('plans');
   const [modalDemarrer,   setModalDemarrer]   = useState(false);
   const [planChoisi,      setPlanChoisi]      = useState(null);
   const [modalAbandonner, setModalAbandonner] = useState(false);
 
+  // ── Helper : nom traduit d'un plan ─────────────────────────────────────────
+  function planTitre(plan) {
+    return isFr ? plan.titreFr : plan.titreEn;
+  }
+  function planDesc(plan) {
+    return isFr ? plan.descFr : plan.descEn;
+  }
+  function dureeLabel(plan) {
+    return isFr
+      ? `${plan.duree} jours`
+      : `${plan.duree} days`;
+  }
+
+  // ── Chargement ──────────────────────────────────────────────────────────────
   useFocusEffect(
     useCallback(() => {
       (async () => {
@@ -142,7 +168,9 @@ export default function PlanScreen() {
           const raw = await AsyncStorage.getItem(STORAGE_KEY);
           if (raw) {
             const data = JSON.parse(raw);
-            setPlanActif(data.plan);
+            // Retrouver les données complètes du plan depuis PLANS_DATA
+            const fullPlan = PLANS_DATA.find(p => p.id === data.plan?.id) || data.plan;
+            setPlanActif(fullPlan);
             setProgression(data.progression || []);
           }
         } catch {}
@@ -150,6 +178,7 @@ export default function PlanScreen() {
     }, [])
   );
 
+  // ── Actions ─────────────────────────────────────────────────────────────────
   function confirmerDemarrer(plan) {
     setPlanChoisi(plan);
     setModalDemarrer(true);
@@ -157,7 +186,7 @@ export default function PlanScreen() {
 
   async function demarrerPlan() {
     const data = {
-      plan:        planChoisi,
+      plan:        { id: planChoisi.id },
       progression: [],
       startedAt:   new Date().toISOString(),
     };
@@ -186,6 +215,7 @@ export default function PlanScreen() {
     setOnglet('plans');
   }
 
+  // ── Calculs ─────────────────────────────────────────────────────────────────
   const chapitresPlan = planActif ? (PLAN_CHAPITRES[planActif.id] || []) : [];
   const total         = chapitresPlan.length;
   const lus           = progression.length;
@@ -198,20 +228,26 @@ export default function PlanScreen() {
 
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <Text style={styles.headerTitle}>Plan de lecture</Text>
+        <Text style={styles.headerTitle}>{t.readingPlan}</Text>
         <Text style={styles.headerSub}>
-          {planActif ? planActif.titre : 'Choisissez un plan'}
+          {planActif ? planTitre(planActif) : t.choosePlan}
         </Text>
       </View>
 
       {/* Onglets */}
-      <View style={[styles.tabs, { backgroundColor: colors.surface,
-        borderBottomColor: colors.border }]}>
-        {[['plans', 'list', 'Plans'], ['progression', 'bar-chart', 'Progression']].map(([key, icon, label]) => (
+      <View style={[styles.tabs, {
+        backgroundColor:  colors.surface,
+        borderBottomColor: colors.border,
+      }]}>
+        {[
+          { key: 'plans',      icon: 'list',      label: t.plans_tab      },
+          { key: 'progression',icon: 'bar-chart', label: t.progress_tab   },
+        ].map(({ key, icon, label }) => (
           <TouchableOpacity
             key={key}
             style={[styles.tab, onglet === key && {
-              borderBottomWidth: 3, borderBottomColor: colors.primary,
+              borderBottomWidth: 3,
+              borderBottomColor: colors.primary,
             }]}
             onPress={() => setOnglet(key)}
           >
@@ -235,17 +271,18 @@ export default function PlanScreen() {
         {onglet === 'plans' && (
           <>
             <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-              Choisissez votre rythme de lecture
+              {t.chooseRhythm}
             </Text>
-            {PLANS.map((plan) => {
+
+            {PLANS_DATA.map((plan) => {
               const estActif = planActif?.id === plan.id;
               return (
                 <TouchableOpacity
                   key={plan.id}
                   style={[styles.planCard, {
                     backgroundColor: colors.surface,
-                    borderColor: estActif ? colors.primary : colors.border,
-                    borderWidth: estActif ? 2 : 1,
+                    borderColor:     estActif ? colors.primary : colors.border,
+                    borderWidth:     estActif ? 2 : 1,
                   }]}
                   onPress={() => confirmerDemarrer(plan)}
                 >
@@ -255,30 +292,37 @@ export default function PlanScreen() {
                     </View>
                     <View style={styles.planInfo}>
                       <Text style={[styles.planTitre, { color: colors.textPrimary }]}>
-                        {plan.titre}
+                        {planTitre(plan)}
                       </Text>
                       <Text style={[styles.planDesc, { color: colors.textSecondary }]}>
-                        {plan.description}
+                        {planDesc(plan)}
                       </Text>
                     </View>
                     {estActif && (
                       <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                        <Text style={styles.badgeText}>Actif</Text>
+                        <Text style={styles.badgeText}>{t.active}</Text>
                       </View>
                     )}
                   </View>
+
                   <View style={[styles.planFooter, { borderTopColor: colors.divider }]}>
                     <View style={styles.planMetaRow}>
                       <Ionicons name="time-outline" size={12} color={colors.textLight} />
-                      <Text style={[styles.planMeta, { color: colors.textLight }]}> {plan.duree}</Text>
+                      <Text style={[styles.planMeta, { color: colors.textLight }]}>
+                        {' '}{dureeLabel(plan)}
+                      </Text>
                     </View>
                     <View style={styles.planMetaRow}>
                       <Ionicons name="book-outline" size={12} color={colors.textLight} />
-                      <Text style={[styles.planMeta, { color: colors.textLight }]}> {plan.chapitresParJour} ch/jour</Text>
+                      <Text style={[styles.planMeta, { color: colors.textLight }]}>
+                        {' '}{t.chPerDay(plan.chapitresParJour)}
+                      </Text>
                     </View>
                     <View style={styles.planMetaRow}>
                       <Ionicons name="layers-outline" size={12} color={colors.textLight} />
-                      <Text style={[styles.planMeta, { color: colors.textLight }]}> {plan.total} chapitres</Text>
+                      <Text style={[styles.planMeta, { color: colors.textLight }]}>
+                        {' '}{plan.total} {isFr ? 'chapitres' : 'chapters'}
+                      </Text>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -294,13 +338,13 @@ export default function PlanScreen() {
               <View style={styles.emptyState}>
                 <Ionicons name="calendar-outline" size={52} color={colors.textLight} />
                 <Text style={[styles.emptyText, { color: colors.textLight }]}>
-                  Aucun plan actif.{'\n'}Choisissez un plan pour commencer !
+                  {t.noPlan}
                 </Text>
                 <TouchableOpacity
                   style={[styles.startBtn, { backgroundColor: colors.primary }]}
                   onPress={() => setOnglet('plans')}
                 >
-                  <Text style={styles.startBtnText}>Voir les plans →</Text>
+                  <Text style={styles.startBtnText}>{t.seePlans}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -310,7 +354,7 @@ export default function PlanScreen() {
                   <View style={styles.progressHeader}>
                     <Ionicons name={planActif.icon} size={20} color={colors.accent} />
                     <Text style={[styles.progressTitre, { color: colors.textPrimary }]}>
-                      {planActif.titre}
+                      {planTitre(planActif)}
                     </Text>
                   </View>
                   <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
@@ -322,7 +366,7 @@ export default function PlanScreen() {
                   <View style={styles.progressStats}>
                     <Text style={[styles.progressNum, { color: colors.primary }]}>{lus}</Text>
                     <Text style={[styles.progressSlash, { color: colors.textLight }]}>
-                      /{total} chapitres
+                      /{total} {isFr ? 'chapitres' : 'chapters'}
                     </Text>
                     <View style={[styles.pctBadge, { backgroundColor: colors.accent }]}>
                       <Text style={styles.pctText}>{pourcentage}%</Text>
@@ -334,7 +378,7 @@ export default function PlanScreen() {
                 {lus === total && total > 0 && (
                   <View style={[styles.completedCard, { backgroundColor: colors.accent }]}>
                     <Ionicons name="trophy" size={40} color="#fff" />
-                    <Text style={styles.completedText}>Plan terminé ! Félicitations !</Text>
+                    <Text style={styles.completedText}>{t.congratulations}</Text>
                   </View>
                 )}
 
@@ -342,7 +386,7 @@ export default function PlanScreen() {
                 {prochain && (
                   <View style={{ marginBottom: 20 }}>
                     <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                      Prochain chapitre
+                      {t.nextChapterLabel}
                     </Text>
                     <TouchableOpacity
                       style={[styles.prochainCard, { backgroundColor: colors.primary }]}
@@ -354,14 +398,13 @@ export default function PlanScreen() {
                       <View style={styles.prochainRow}>
                         <Ionicons name="book" size={18} color="#fff" />
                         <Text style={styles.prochainText}>
-                          {prochain.book} — Chapitre {prochain.chapter}
+                          {prochain.book} — {isFr ? 'Chapitre' : 'Chapter'} {prochain.chapter}
                         </Text>
                       </View>
                       <View style={styles.prochainHint}>
-                        <Ionicons name="arrow-forward-circle-outline" size={14} color="rgba(255,255,255,0.75)" />
-                        <Text style={styles.prochainSub}>
-                          Appuyez pour lire et marquer comme lu
-                        </Text>
+                        <Ionicons name="arrow-forward-circle-outline" size={14}
+                          color="rgba(255,255,255,0.75)" />
+                        <Text style={styles.prochainSub}>{t.tapToRead}</Text>
                       </View>
                     </TouchableOpacity>
                   </View>
@@ -369,7 +412,7 @@ export default function PlanScreen() {
 
                 {/* Liste chapitres */}
                 <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                  Tous les chapitres ({lus}/{total})
+                  {t.allChapters(lus, total)}
                 </Text>
                 {chapitresPlan.map((chap, index) => {
                   const estLu = progression.includes(index);
@@ -378,19 +421,19 @@ export default function PlanScreen() {
                       key={index}
                       style={[styles.chapRow, {
                         backgroundColor: estLu ? colors.favorite : colors.surface,
-                        borderColor: estLu ? colors.favoriteBorder : colors.border,
+                        borderColor:     estLu ? colors.favoriteBorder : colors.border,
                       }]}
                       onPress={() => marquerLu(index)}
                       onLongPress={() => router.push(`/lecture/${chap.book}/${chap.chapter}`)}
                     >
                       <View style={[styles.checkbox, {
                         backgroundColor: estLu ? colors.primary : 'transparent',
-                        borderColor: estLu ? colors.primary : colors.border,
+                        borderColor:     estLu ? colors.primary : colors.border,
                       }]}>
                         {estLu && <Ionicons name="checkmark" size={13} color="#fff" />}
                       </View>
                       <Text style={[styles.chapRowText, { color: colors.textPrimary }]}>
-                        {chap.book} — Chapitre {chap.chapter}
+                        {chap.book} — {isFr ? 'Chapitre' : 'Chapter'} {chap.chapter}
                       </Text>
                       <Ionicons
                         name={estLu ? 'checkmark-circle' : 'ellipse-outline'}
@@ -409,7 +452,7 @@ export default function PlanScreen() {
                   <View style={styles.abandonRow}>
                     <Ionicons name="trash-outline" size={16} color="#E53E3E" />
                     <Text style={[styles.abandonText, { color: '#E53E3E' }]}>
-                      Abandonner ce plan
+                      {t.abandonPlan}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -427,31 +470,34 @@ export default function PlanScreen() {
             <View style={[styles.modalIconBox, { backgroundColor: colors.surfaceWarm }]}>
               <Ionicons name={planChoisi?.icon} size={40} color={colors.accent} />
             </View>
+
             <Text style={[styles.modalTitre, { color: colors.textPrimary }]}>
-              {planChoisi?.titre}
+              {planChoisi ? planTitre(planChoisi) : ''}
             </Text>
             <Text style={[styles.modalDesc, { color: colors.textSecondary }]}>
-              {planChoisi?.description}
+              {planChoisi ? planDesc(planChoisi) : ''}
             </Text>
 
-            <View style={[styles.modalInfo, { backgroundColor: colors.surfaceWarm,
-              borderColor: colors.border }]}>
+            <View style={[styles.modalInfo, {
+              backgroundColor: colors.surfaceWarm,
+              borderColor:     colors.border,
+            }]}>
               <View style={styles.modalInfoRow}>
                 <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
                 <Text style={[styles.modalInfoText, { color: colors.textSecondary }]}>
-                  Durée : {planChoisi?.duree}
+                  {t.duration} : {planChoisi ? dureeLabel(planChoisi) : ''}
                 </Text>
               </View>
               <View style={styles.modalInfoRow}>
                 <Ionicons name="book-outline" size={14} color={colors.textSecondary} />
                 <Text style={[styles.modalInfoText, { color: colors.textSecondary }]}>
-                  Rythme : {planChoisi?.chapitresParJour} chapitres/jour
+                  {t.pace} : {planChoisi ? t.chPerDay(planChoisi.chapitresParJour) : ''}
                 </Text>
               </View>
               <View style={styles.modalInfoRow}>
                 <Ionicons name="layers-outline" size={14} color={colors.textSecondary} />
                 <Text style={[styles.modalInfoText, { color: colors.textSecondary }]}>
-                  Total : {planChoisi?.total} chapitres
+                  {t.total} : {planChoisi?.total} {isFr ? 'chapitres' : 'chapters'}
                 </Text>
               </View>
             </View>
@@ -460,7 +506,7 @@ export default function PlanScreen() {
               <View style={styles.warningRow}>
                 <Ionicons name="warning-outline" size={14} color="#E53E3E" />
                 <Text style={[styles.modalWarning, { color: '#E53E3E' }]}>
-                  Cela remplacera votre plan actuel
+                  {t.replaceWarning}
                 </Text>
               </View>
             )}
@@ -471,7 +517,7 @@ export default function PlanScreen() {
                 onPress={() => setModalDemarrer(false)}
               >
                 <Text style={[styles.modalBtnCancelText, { color: colors.textSecondary }]}>
-                  Annuler
+                  {t.cancel}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -480,7 +526,7 @@ export default function PlanScreen() {
               >
                 <View style={styles.modalBtnRow}>
                   <Ionicons name="rocket" size={15} color="#fff" />
-                  <Text style={styles.modalBtnConfirmText}> Démarrer</Text>
+                  <Text style={styles.modalBtnConfirmText}> {t.start}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -496,26 +542,25 @@ export default function PlanScreen() {
               <Ionicons name="trash" size={40} color="#E53E3E" />
             </View>
             <Text style={[styles.modalTitre, { color: colors.textPrimary }]}>
-              Abandonner le plan ?
+              {t.abandonPlan} ?
             </Text>
             <Text style={[styles.modalDesc, { color: colors.textSecondary }]}>
-              Votre progression sera perdue et ne pourra pas être récupérée.
+              {t.abandonConfirm}
             </Text>
-
             <View style={styles.modalBtns}>
               <TouchableOpacity
                 style={[styles.modalBtnCancel, { borderColor: colors.border }]}
                 onPress={() => setModalAbandonner(false)}
               >
                 <Text style={[styles.modalBtnCancelText, { color: colors.textSecondary }]}>
-                  Annuler
+                  {t.cancel}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalBtnConfirm, { backgroundColor: '#E53E3E' }]}
                 onPress={abandonnerPlan}
               >
-                <Text style={styles.modalBtnConfirmText}>Abandonner</Text>
+                <Text style={styles.modalBtnConfirmText}>{t.abandon}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -540,7 +585,6 @@ const styles = StyleSheet.create({
   sectionLabel:       { fontSize: 12, fontWeight: '700', marginBottom: 12,
                         letterSpacing: 1, textTransform: 'uppercase' },
 
-  // Plans
   planCard:           { borderRadius: 14, padding: 16, marginBottom: 14,
                         shadowColor: '#000', shadowOpacity: 0.05,
                         shadowRadius: 6, elevation: 2 },
@@ -557,7 +601,6 @@ const styles = StyleSheet.create({
   planMetaRow:        { flexDirection: 'row', alignItems: 'center' },
   planMeta:           { fontSize: 12 },
 
-  // Progression
   progressCard:       { borderRadius: 14, padding: 20, marginBottom: 20,
                         shadowColor: '#000', shadowOpacity: 0.05,
                         shadowRadius: 6, elevation: 2 },
@@ -573,50 +616,42 @@ const styles = StyleSheet.create({
   pctBadge:           { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   pctText:            { color: '#fff', fontWeight: '700', fontSize: 14 },
 
-  // Terminé
   completedCard:      { borderRadius: 14, padding: 20, alignItems: 'center',
                         marginBottom: 20, gap: 8 },
   completedText:      { color: '#fff', fontWeight: '700', fontSize: 18 },
 
-  // Prochain
   prochainCard:       { borderRadius: 12, padding: 18, alignItems: 'center' },
   prochainRow:        { flexDirection: 'row', alignItems: 'center', gap: 8 },
   prochainText:       { color: '#fff', fontWeight: '700', fontSize: 16 },
   prochainHint:       { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
   prochainSub:        { color: 'rgba(255,255,255,0.75)', fontSize: 13 },
 
-  // Chapitres
   chapRow:            { flexDirection: 'row', alignItems: 'center', borderRadius: 10,
                         padding: 12, marginBottom: 8, borderWidth: 1 },
   checkbox:           { width: 22, height: 22, borderRadius: 6, borderWidth: 2,
                         justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   chapRowText:        { flex: 1, fontSize: 14, fontWeight: '500' },
 
-  // Vide
   emptyState:         { alignItems: 'center', marginTop: 60, gap: 12 },
   emptyText:          { fontSize: 15, textAlign: 'center', lineHeight: 24, marginBottom: 12 },
   startBtn:           { paddingHorizontal: 32, paddingVertical: 14, borderRadius: 12 },
   startBtnText:       { color: '#fff', fontWeight: '700', fontSize: 15 },
 
-  // Abandonner
   abandonBtn:         { borderWidth: 1, borderRadius: 12, paddingVertical: 14,
                         alignItems: 'center', marginTop: 16, marginBottom: 8 },
   abandonRow:         { flexDirection: 'row', alignItems: 'center', gap: 8 },
   abandonText:        { fontWeight: '600', fontSize: 14 },
 
-  // Modals
   modalOverlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
                         justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalBox:           { borderRadius: 20, padding: 28, width: '100%',
-                        maxWidth: 400, alignItems: 'center',
-                        shadowColor: '#000', shadowOpacity: 0.2,
-                        shadowRadius: 20, elevation: 10 },
+  modalBox:           { borderRadius: 20, padding: 28, width: '100%', maxWidth: 400,
+                        alignItems: 'center', shadowColor: '#000',
+                        shadowOpacity: 0.2, shadowRadius: 20, elevation: 10 },
   modalIconBox:       { width: 72, height: 72, borderRadius: 20, justifyContent: 'center',
                         alignItems: 'center', marginBottom: 12 },
   modalTitre:         { fontSize: 20, fontWeight: '700', marginBottom: 8,
                         textAlign: 'center' },
-  modalDesc:          { fontSize: 14, textAlign: 'center', lineHeight: 20,
-                        marginBottom: 16 },
+  modalDesc:          { fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 16 },
   modalInfo:          { borderRadius: 12, padding: 14, width: '100%',
                         borderWidth: 1, marginBottom: 16, gap: 10 },
   modalInfoRow:       { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -627,8 +662,7 @@ const styles = StyleSheet.create({
   modalBtnCancel:     { flex: 1, borderWidth: 1, borderRadius: 12,
                         paddingVertical: 14, alignItems: 'center' },
   modalBtnCancelText: { fontWeight: '600', fontSize: 14 },
-  modalBtnConfirm:    { flex: 1, borderRadius: 12, paddingVertical: 14,
-                        alignItems: 'center' },
+  modalBtnConfirm:    { flex: 1, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   modalBtnRow:        { flexDirection: 'row', alignItems: 'center' },
   modalBtnConfirmText:{ color: '#fff', fontWeight: '700', fontSize: 14 },
 });

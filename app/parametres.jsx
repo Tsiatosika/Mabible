@@ -3,13 +3,15 @@ import { View, Text, TouchableOpacity, StyleSheet,
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState } from 'react';
 import BottomTabBar from '../components/BottomTabBar';
 
 export default function ParametresScreen() {
-  const router          = useRouter();
+  const router = useRouter();
   const { colors, isDark, toggleTheme } = useTheme();
+  const { t, language, setLang } = useLanguage();
   const [cleared, setCleared] = useState(false);
 
   async function effacerHistorique() {
@@ -47,11 +49,7 @@ export default function ParametresScreen() {
       <View style={[styles.rowIconBox, {
         backgroundColor: danger ? '#FFF0F0' : colors.surfaceWarm,
       }]}>
-        <Ionicons
-          name={iconName}
-          size={18}
-          color={danger ? '#E53E3E' : colors.accent}
-        />
+        <Ionicons name={iconName} size={18} color={danger ? '#E53E3E' : colors.accent} />
       </View>
       <Text style={[styles.rowLabel, { color: danger ? '#E53E3E' : colors.textPrimary }]}>
         {label}
@@ -63,6 +61,37 @@ export default function ParametresScreen() {
     </TouchableOpacity>
   );
 
+  // Sélecteur de langue inline
+  const LangSelector = () => (
+    <View style={styles.langRow}>
+      {[
+        { code: 'fr', label: t.french,  flag: '🇫🇷' },
+        { code: 'en', label: t.english, flag: '🇬🇧' },
+      ].map(({ code, label, flag }) => (
+        <TouchableOpacity
+          key={code}
+          style={[styles.langBtn, {
+            backgroundColor: language === code ? colors.primary : colors.surfaceWarm,
+            borderColor:     language === code ? colors.primary : colors.border,
+          }]}
+          onPress={() => setLang(code)}
+        >
+          <Text style={styles.langFlag}>{flag}</Text>
+          <Text style={[styles.langLabel, {
+            color: language === code ? '#fff' : colors.textSecondary,
+            fontWeight: language === code ? '700' : '500',
+          }]}>
+            {label}
+          </Text>
+          {language === code && (
+            <Ionicons name="checkmark-circle" size={16} color="#fff"
+              style={{ marginLeft: 4 }} />
+          )}
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
 
@@ -71,17 +100,32 @@ export default function ParametresScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.headerBack}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Paramètres</Text>
+        <Text style={styles.headerTitle}>{t.settings}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
 
+        {/* Langue */}
+        <Section title={t.language_label}>
+          <View style={[styles.row, { borderBottomWidth: 0 }]}>
+            <View style={[styles.rowIconBox, { backgroundColor: colors.surfaceWarm }]}>
+              <Ionicons name="globe-outline" size={18} color={colors.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: colors.textPrimary, marginBottom: 10 }]}>
+                {t.language_label}
+              </Text>
+              <LangSelector />
+            </View>
+          </View>
+        </Section>
+
         {/* Apparence */}
-        <Section title="Apparence">
+        <Section title={t.appearance}>
           <Row
             iconName={isDark ? 'moon' : 'sunny'}
-            label={isDark ? 'Mode sombre actif' : 'Mode clair actif'}
+            label={isDark ? t.darkModeActive : t.lightModeActive}
             right={
               <Switch
                 value={isDark}
@@ -95,26 +139,26 @@ export default function ParametresScreen() {
         </Section>
 
         {/* À propos */}
-        <Section title="À propos">
+        <Section title={t.about}>
           <Row
             iconName="book-outline"
-            label="Version de la Bible"
+            label={t.bibleVersion}
             right={
               <Text style={[styles.rowValue, { color: colors.textLight }]}>
-                Louis Segond
+                {language === 'fr' ? 'Louis Segond' : 'King James'}
               </Text>
             }
           />
           <Row
             iconName="phone-portrait-outline"
-            label="Version de l'app"
+            label={t.appVersion}
             right={
               <Text style={[styles.rowValue, { color: colors.textLight }]}>1.0.0</Text>
             }
           />
           <Row
             iconName="layers-outline"
-            label="Nombre de versets"
+            label={t.verseCount}
             right={
               <Text style={[styles.rowValue, { color: colors.textLight }]}>30 975</Text>
             }
@@ -123,26 +167,27 @@ export default function ParametresScreen() {
         </Section>
 
         {/* Données */}
-        <Section title="Données">
+        <Section title={t.data}>
           <Row
             iconName="time-outline"
-            label="Effacer l'historique de lecture"
+            label={t.clearHistory}
             onPress={effacerHistorique}
           />
           <Row
             iconName="warning-outline"
-            label="Réinitialiser toutes les données"
+            label={t.resetAll}
             onPress={effacerTout}
             danger
             border={false}
           />
         </Section>
 
-        {/* Toast confirmation */}
+        {/* Toast */}
         {cleared && (
           <View style={[styles.toast, { backgroundColor: colors.primary }]}>
-            <Ionicons name="checkmark-circle" size={18} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.toastText}>Données effacées !</Text>
+            <Ionicons name="checkmark-circle" size={18} color="#fff"
+              style={{ marginRight: 8 }} />
+            <Text style={styles.toastText}>{t.cleared}</Text>
           </View>
         )}
 
@@ -150,8 +195,7 @@ export default function ParametresScreen() {
         <View style={styles.footerBox}>
           <Ionicons name="heart" size={16} color={colors.accent} />
           <Text style={[styles.footer, { color: colors.textLight }]}>
-            {'  '}Ma Bible — Fait avec amour{'\n'}
-            Toutes les données restent sur votre appareil
+            {'  '}{t.madeWith}
           </Text>
         </View>
 
@@ -180,6 +224,13 @@ const styles = StyleSheet.create({
   rowLabel:     { flex: 1, fontSize: 15 },
   rowRight:     { alignItems: 'flex-end' },
   rowValue:     { fontSize: 14 },
+
+  // Langue
+  langRow:      { flexDirection: 'row', gap: 10 },
+  langBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+                  paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, gap: 5 },
+  langFlag:     { fontSize: 18 },
+  langLabel:    { fontSize: 14 },
 
   toast:        { borderRadius: 12, padding: 14, alignItems: 'center',
                   marginBottom: 16, flexDirection: 'row', justifyContent: 'center' },
